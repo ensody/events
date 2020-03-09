@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:reactive_state/reactive_state.dart';
 
-import 'event_list_item.dart';
 import '../state.dart';
+import 'event_list_item.dart';
 
 class FavoritesList extends StatelessWidget {
   FavoritesList({Key key}) : super(key: key);

@@ -4,8 +4,8 @@ import 'package:reactive_state/reactive_state.dart';
 
 import '../state.dart';
 import '../ticketmaster/api.dart';
-import 'models.dart';
 import 'favorites_cache.dart';
+import 'models.dart';
 
 class EventState {
   EventState(this.global);
