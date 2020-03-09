@@ -13,7 +13,7 @@ class FavoritesList extends StatelessWidget {
     final state = Provider.of<EventState>(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text('Favorite EVents'),
+        title: Text('Favorite events'),
       ),
       body: AutoBuild(
         builder: (context, get, track) {

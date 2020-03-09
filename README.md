@@ -1,6 +1,8 @@
-# EVents
+# Events
 
-EVents is a simple events search demo using [reactive_state](https://pub.dev/packages/reactive_state) and the Ticketmaster API.
+Events is a simple [reactive_state](https://pub.dev/packages/reactive_state) demo for searching events using the Ticketmaster API.
+
+This sample app shows how to use dependency injection and state handling.
 
 ## Getting started
 

@@ -30,7 +30,7 @@ class EventsApp extends StatelessWidget {
               providers: [Provider.value(value: state)]
                 ..addAll(state.providers),
               child: MaterialApp(
-                title: 'EVents',
+                title: 'Events',
                 theme: ThemeData(
                   primarySwatch: Colors.blue,
                 ),

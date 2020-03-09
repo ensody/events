@@ -30,7 +30,7 @@ class _EventListState extends State<EventList> {
     final state = Provider.of<EventState>(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text('EVents'),
+        title: Text('Events'),
         actions: <Widget>[
           FavoritesButton(animationTrigger: favoriteChanged.stream),
         ],
