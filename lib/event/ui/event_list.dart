@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:reactive_state/reactive_state.dart';
 
-import '../common/ui/listview.dart';
+import '../../common/ui/listview.dart';
 import 'event_list_item.dart';
 import 'favorites_button.dart';
-import 'state.dart';
+import '../state.dart';
 
 class EventList extends StatefulWidget {
   EventList({Key key}) : super(key: key);

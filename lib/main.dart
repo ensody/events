@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'event/event_list.dart';
+import 'event/ui/event_list.dart';
 import 'secrets.dart';
 import 'state.dart';
 import 'ticketmaster/api.dart';

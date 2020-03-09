@@ -6,7 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:reactive_state/reactive_state.dart';
 
 import 'favorites_list.dart';
-import 'state.dart';
+import '../state.dart';
 
 /// Button for accessing favorites from [AppBar].
 class FavoritesButton extends StatefulWidget {

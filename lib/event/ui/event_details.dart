@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:reactive_state/reactive_state.dart';
 
-import '../locale.dart';
-import 'models.dart';
-import 'state.dart';
+import '../../locale.dart';
+import '../models.dart';
+import '../state.dart';
 
 class EventDetails extends StatelessWidget {
   EventDetails({Key key, @required this.event}) : super(key: key);

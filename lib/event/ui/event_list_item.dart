@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:reactive_state/reactive_state.dart';
 
-import '../locale.dart';
+import '../../locale.dart';
 import 'event_details.dart';
-import 'models.dart';
-import 'state.dart';
+import '../models.dart';
+import '../state.dart';
 
 Widget eventItemBuilder(
     BuildContext context, EventState state, Value<Event> eventValue,
