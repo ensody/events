@@ -13,7 +13,7 @@ Widget eventItemBuilder(
       key: ValueKey(eventValue.value.id),
       builder: (context, get, track) {
         var event = get(eventValue);
-        bool favorite = state.isFavorite(event);
+        bool favorite = state.favorites.isFavorite(event);
         var dateRange = formatDateRange(event.start, event.end);
         return ListTile(
           onTap: () => state.global.navigate(EventDetails(event: eventValue)),
@@ -25,7 +25,7 @@ Widget eventItemBuilder(
           trailing: IconButton(
             icon: Icon(favorite ? Icons.star : Icons.star_border),
             onPressed: () {
-              state.setFavorite(eventValue, !favorite);
+              state.favorites.setFavorite(eventValue, !favorite);
               if (onFavoriteChanged != null) {
                 onFavoriteChanged(eventValue);
               }

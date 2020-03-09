@@ -26,7 +26,7 @@ class EventDetails extends StatelessWidget {
     // TODO: We really need some better UI design here
     return AutoBuild(builder: (context, get, track) {
       var event = get(this.event);
-      bool favorite = state.isFavorite(event);
+      bool favorite = state.favorites.isFavorite(event);
       var dateRange = formatDateRange(event.start, event.end);
       return Padding(
         padding: EdgeInsets.all(16.0),
@@ -50,7 +50,8 @@ class EventDetails extends StatelessWidget {
                 SizedBox(width: 16.0),
                 IconButton(
                   icon: Icon(favorite ? Icons.star : Icons.star_border),
-                  onPressed: () => state.setFavorite(this.event, !favorite),
+                  onPressed: () =>
+                      state.favorites.setFavorite(this.event, !favorite),
                 ),
               ],
             ),

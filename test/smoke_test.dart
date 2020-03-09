@@ -70,14 +70,16 @@ void main() {
     // Set favorite
     await tester.tap(find.byIcon(Icons.star_border).first);
     await tester.pumpWidget(app);
-    expect(state.event.isFavorite(state.event.events.value[0].value), isTrue);
-    expect(state.event.isFavorite(state.event.events.value[1].value), isFalse);
+    expect(state.event.favorites.isFavorite(state.event.events.value[0].value),
+        isTrue);
+    expect(state.event.favorites.isFavorite(state.event.events.value[1].value),
+        isFalse);
     expect(find.byIcon(Icons.star), findsOneWidget);
     expect(find.byIcon(Icons.star_border), findsOneWidget);
-    state.event.setFavorite(state.event.events.value[1], true);
+    state.event.favorites.setFavorite(state.event.events.value[1], true);
     await tester.pumpWidget(app);
     expect(find.byIcon(Icons.star), findsNWidgets(2));
-    state.event.setFavorite(state.event.events.value[1], false);
+    state.event.favorites.setFavorite(state.event.events.value[1], false);
     await tester.pumpWidget(app);
     expect(find.byIcon(Icons.star), findsOneWidget);
     expect(find.byIcon(Icons.star_border), findsOneWidget);

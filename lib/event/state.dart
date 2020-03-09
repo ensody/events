@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:reactive_state/reactive_state.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../common/api/json.dart';
 import '../state.dart';
@@ -9,77 +10,30 @@ import '../ticketmaster/api.dart';
 import 'models.dart';
 
 class EventState {
-  // IMPORTANT: We try to share the same instance of Value between the favorites
-  // and events lists, so widgets listen to the same instances.
+  EventState(this.global);
 
-  EventState(this.global) {
-    eventsMap = events.toMap((event) => MapEntry(event.value.id, event));
-
-    // TODO: Construct a ListValue by tracking list and map change events
-    favorites = DerivedValue((get, track) {
-      final eventsMap = get(this.eventsMap);
-      final favoritesCache = get(this.favoritesCache);
-      final result = <Value<Event>>[];
-      for (var item in eventsMap.values) {
-        if (favoritesCache.containsKey(item.value.id)) {
-          result.add(item);
-        }
-      }
-      for (var id in favoritesCache.keys.toSet()..removeAll(eventsMap.keys)) {
-        result.add(favoritesCache[id]);
-      }
-      return List.unmodifiable(result);
-    });
+  Future<void> initialize() async {
+    favorites = FavoritesCache(await global.getPrefs());
   }
 
-  // This contains all events we've ever paginated through.
   // TODO: It would be nicer to only keep a subset of all pages in RAM.
+  /// This contains all events we've ever paginated through.
   final events = ListValue(<Value<Event>>[]);
 
-  // Whether we've paginated to the end of the events result list
+  /// Whether we've paginated to the end of the events result list
   var finishedLoading = Value(false);
-  DerivedValue<List<Value<Event>>> favorites;
+
+  /// Manages favorite events.
+  FavoritesCache favorites;
+
   final GlobalState global;
 
   int _page = 0;
-  BaseMapValue<String, Value<Event>> eventsMap;
-
-  // We store the all event objects as JSON, so we can retrieve them even if
-  // none of our queries return them.
-  // TODO: At some point we should store in a DB instead of SharedPreferences
-  static const _FAVORITES_KEY = 'favorites';
-  final favoritesCache = Value(<String, Value<Event>>{});
-
-  Future<void> initialize() async {
-    final prefs = await global.getPrefs();
-    favoritesCache.update((favoritesCache) {
-      for (var item in prefs?.getStringList(_FAVORITES_KEY) ?? <String>[]) {
-        final event = Event.fromJson(decodeJson(item));
-        favoritesCache[event.id] = Value(event);
-      }
-    });
-  }
-
-  bool isFavorite(Event event) => favoritesCache.value.containsKey(event.id);
-
-  void setFavorite(Value<Event> event, bool favorite) async {
-    final prefs = await global.getPrefs();
-    favoritesCache.update((favoritesCache) {
-      var id = event.value.id;
-      if (favorite) {
-        favoritesCache[id] = eventsMap.value[id];
-      } else {
-        favoritesCache.remove(id);
-      }
-      prefs?.setStringList(_FAVORITES_KEY,
-          [for (var e in favoritesCache.values) json.encode(e.value.toJson())]);
-    });
-
-    // Notify listeners
-    event.update((_) {});
-  }
 
   void loadNextEventsPage() async {
+    // IMPORTANT: We try to share the same instance of Value between the
+    // favorites and events lists, so widgets listen to the same observables.
+
     // TODO: Instead of using page numbers we should probably work with some
     // pagination cursor - if the API allows that.
     final result = await global.api.getEvents(page: _page);
@@ -88,8 +42,8 @@ class EventState {
     for (var jsonEvent in result.embedded?.events ?? <JsonEvent>[]) {
       final event = Event.fromJsonEvent(jsonEvent);
       // Check if we already have a Value instance for this event
-      if (favoritesCache.value.containsKey(event.id)) {
-        added.add(favoritesCache.value[event.id]..value = event);
+      if (favorites.isFavorite(event)) {
+        added.add(favorites.getById(event.id)..value = event);
       } else {
         added.add(Value(event));
       }
@@ -100,5 +54,88 @@ class EventState {
     if (result?.links?.next == null) {
       finishedLoading.value = true;
     }
+  }
+}
+
+/// Caches favorite events in RAM as a [ValueListenable] of [List] of [Value]
+/// of [Event].
+///
+/// Changes to the favorite state trigger a notification on `Value<Event>`.
+class FavoritesCache extends DerivedValue<List<Value<Event>>> {
+  factory FavoritesCache(SharedPreferences prefs) {
+    FavoritesCache cache;
+    cache = FavoritesCache._(prefs, (get, track) {
+      var now = DateTime.now();
+      return List.unmodifiable(get(cache._byId).values.toList()
+        ..sort((x, y) {
+          return (x.value.start ?? now).compareTo(y.value.start ?? now);
+        }));
+    });
+    return cache;
+  }
+
+  FavoritesCache._(
+      SharedPreferences prefs, AutoRunCallback<List<Value<Event>>> func)
+      : _db = FavoritesDB(prefs),
+        super(func) {
+    _load();
+  }
+
+  /// Favorites mapped from [Event.id] to [Event]
+  final _byId = Value(<String, Value<Event>>{});
+
+  final FavoritesDB _db;
+
+  Future<void> setFavorite(Value<Event> event, bool favorite) async {
+    _byId.update((byId) {
+      var id = event.value.id;
+      if (favorite) {
+        byId[id] = event;
+      } else {
+        byId.remove(id);
+      }
+    });
+    await _save();
+
+    // Notify listeners
+    event.update((_) {});
+  }
+
+  bool isFavorite(Event event) => _byId.value.containsKey(event.id);
+
+  Value<Event> getById(String id) => _byId.value[id];
+
+  void _load() {
+    _byId.update((byId) {
+      for (var event in _db.load()) {
+        byId[event.id] = Value(event);
+      }
+    });
+  }
+
+  Future<void> _save() async {
+    await _db.save(_byId.value.values.map((v) => v.value));
+  }
+}
+
+// TODO: At some point we should store in SQLite instead of SharedPreferences
+// We store whole event objects as JSON, so we can retrieve them even if we
+// haven't yet loaded them via the API.
+class FavoritesDB {
+  FavoritesDB(this._prefs);
+
+  final SharedPreferences _prefs;
+  static const _FAVORITES_KEY = 'favorites';
+
+  List<Event> load() {
+    return <Event>[
+      for (var item in _prefs?.getStringList(_FAVORITES_KEY) ?? <String>[])
+        Event.fromJson(decodeJson(item))
+    ];
+  }
+
+  Future<void> save(Iterable<Event> events) async {
+    await _prefs?.setStringList(
+        _FAVORITES_KEY, [for (var e in events) json.encode(e.toJson())]);
   }
 }
